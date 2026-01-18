@@ -1,0 +1,41 @@
+{
+    "tournament_name": "The Big 4",
+    "season": "2",
+    "year": "2026",
+    "start_date": "2026-02-09",
+    "format": "4on4",
+    "divisions": [
+        {
+            "name": "Division 1",
+            "teams": [
+                { "name": "Polonez",            "tag": "pol",   "flag": "pl", "roster": ["maCler", "ThundeR", "Tom", "Plate", "Er", "Iron", "Emaks"] },
+                { "name": "Black Book",         "tag": "Book",   "flag": "eu", "roster": ["sae", "Milton", "Wimpeeh", "Javve", "Nigve", "Creature", "Diki"] },
+                { "name": "Slackers",           "tag": "]sr[",   "flag": "dk", "roster": ["ParadokS", "Zero", "Grisling", "Razor"] },
+                { "name": "Hell Xpress",        "tag": "[hx]",   "flag": "eu", "roster": ["splash", "shaka", "ok98", "realpit", "Xerial"] },
+                { "name": "Ving",               "tag": "ving", "flag": "se", "roster": ["mille", "sailorman", "edvin", "mythic"] }
+				{ "name": "The Axemen",         "tag": "oeks",   "flag": "se", "roster": ["TheChosenOne", "TiMMi", "Baresi", "PreMorteM", "Macisum", "tr0ll"] },
+				{ "name": "Koff",         		"tag": "KoFF",   "flag": "se", "roster": ["Gamer", "Eh", "Nasander", "pkk", "Scenic", "Wallu"] },
+				{ "name": "Gubbgrottan",        "tag": "gg",   "flag": "se", "roster": ["mazer", "niw", "himmu", "xero", "gnoffa", "Locktar"] },
+            ]
+        },
+        {
+            "name": "Division 2",
+            "teams": [
+                
+                { "name": "The Suicide Squad",   "tag": "tSQ",   "flag": "se", "roster": ["conan", "djevulsk", "elguapo", "nas", "peppe", "phrenic"] },
+                { "name": "Fraggers United",    "tag": "-fu-",   "flag": "fi", "roster": ["Hooraytio", "Anza", "Kippo", "Rusti", "Rghst", "Slaughter"] },
+                { "name": "Tribe of Tjernobyl", "tag": "ToT",  "flag": "se", "roster": ["Oddjob", "Slime", "LethalWiz", "Fix", "Sassa"] },
+                { "name": "Good Old Friends",   "tag": "GoF",  "flag": "se", "roster": ["jOn", "Ekz", "Tumult", "Bass"] },
+                { "name": "Bear Beer Balalaika","tag": "3b",  "flag": "ru", "roster": ["gLAd", "gor", "Zepp", "max_power", "SS", "Ass", "rusty-q"] },
+            ]
+        },
+        {
+            "name": "Division 3",
+            "teams": [
+                
+                { "name": "Boomstickers",       "tag": "bs",   "flag": "se", "roster": ["Ake Vader", "Kylarn", "Kreator", "Le1no", "Bill"] },
+                { "name": "night Wolves",       "tag": "nw",   "flag": "uk", "roster": ["veggie", "Coinz", "x1bot", "R1zla", "Stm", "Nightfall"] },
+                { "name": "Deathbound",         "tag": "db|",   "flag": "fi", "roster": ["fluartity", "Pamppu", "mj23", "Doomie", "kwon"] }
+            ]
+    ]
+}

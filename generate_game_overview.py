@@ -71,7 +71,7 @@ def parse_games(input_dir):
                 "score_t2": teams_score[t2],
                 "roster_t1": rosters[t1],
                 "roster_t2": rosters[t2],
-                "file": os.path.basename(filepath) # Capture filename
+                "file": os.path.basename(filepath) 
             })
 
         except Exception as e:
@@ -127,7 +127,54 @@ def create_new_match(first_game):
         "maps": [first_game]
     }
 
-def generate_html(matches, output_filename):
+def calculate_stats(matches):
+    """
+    Aggregates stats per clan and map distribution.
+    """
+    clan_stats = defaultdict(lambda: {"series_played": 0, "series_won": 0, "maps_played": 0, "maps_won": 0, "maps_lost": 0})
+    map_distribution = defaultdict(int)
+    
+    total_series = 0
+    total_maps = 0
+
+    for m in matches:
+        total_series += 1
+        t1, t2 = m['team1'], m['team2']
+        t1_maps_won = 0
+        t2_maps_won = 0
+        
+        # Count Map Wins
+        for game in m['maps']:
+            total_maps += 1
+            map_name = game['map'].lower()
+            map_distribution[map_name] += 1
+            
+            if game['score_t1'] > game['score_t2']: 
+                t1_maps_won += 1
+            elif game['score_t2'] > game['score_t1']: 
+                t2_maps_won += 1
+        
+        # Update Clan Map Stats
+        clan_stats[t1]["maps_played"] += len(m['maps'])
+        clan_stats[t1]["maps_won"] += t1_maps_won
+        clan_stats[t1]["maps_lost"] += t2_maps_won
+        
+        clan_stats[t2]["maps_played"] += len(m['maps'])
+        clan_stats[t2]["maps_won"] += t2_maps_won
+        clan_stats[t2]["maps_lost"] += t1_maps_won
+        
+        # Update Series Stats
+        clan_stats[t1]["series_played"] += 1
+        clan_stats[t2]["series_played"] += 1
+        
+        if t1_maps_won > t2_maps_won:
+            clan_stats[t1]["series_won"] += 1
+        elif t2_maps_won > t1_maps_won:
+            clan_stats[t2]["series_won"] += 1
+            
+    return clan_stats, map_distribution, total_series, total_maps
+
+def generate_html(matches, clan_stats, map_dist, total_series, total_maps, output_filename):
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -136,11 +183,37 @@ def generate_html(matches, output_filename):
         <title>QuakeWorld Match Report</title>
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; }}
-            h1 {{ text-align: center; color: #bb86fc; }}
+            h1 {{ text-align: center; color: #bb86fc; margin-bottom: 20px; }}
             .container {{ max-width: 900px; margin: 0 auto; }}
             
-            .match-card {{ background-color: #1e1e1e; margin-bottom: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+            /* Tabs */
+            .tab-container {{ text-align: center; margin-bottom: 20px; }}
+            .tab-btn {{ 
+                background: #333; color: #fff; border: none; padding: 10px 20px; 
+                margin: 0 5px; cursor: pointer; border-radius: 4px; font-weight: bold;
+            }}
+            .tab-btn.active {{ background: #bb86fc; color: #000; }}
+            .tab-btn:hover {{ background: #444; }}
             
+            /* Sections */
+            .section {{ display: none; }}
+            .section.active {{ display: block; }}
+            
+            /* GENERAL TABLE STYLES */
+            .data-table {{ width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }}
+            .data-table th, .data-table td {{ padding: 12px 15px; text-align: center; border-bottom: 1px solid #333; }}
+            .data-table th {{ background: #2c2c2c; color: #bb86fc; text-align: left; }}
+            .data-table td:first-child {{ text-align: left; font-weight: bold; color: #fff; }}
+            .data-table tr:hover {{ background: #252525; }}
+            
+            .summary-box {{ 
+                background: #252525; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; 
+                border: 1px solid #333; color: #aaa;
+            }}
+            .summary-box strong {{ color: #fff; font-size: 1.2em; }}
+            
+            /* MATCH LIST STYLES */
+            .match-card {{ background-color: #1e1e1e; margin-bottom: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
             .match-summary {{ 
                 display: flex; justify-content: space-between; align-items: center; 
                 padding: 15px 20px; cursor: pointer; transition: background 0.2s;
@@ -158,30 +231,107 @@ def generate_html(matches, output_filename):
             
             details > summary {{ list-style: none; }}
             details > summary::-webkit-details-marker {{ display: none; }}
-            
             .match-details {{ padding: 0 20px 20px 20px; border-top: 1px solid #333; background: #252525; }}
             
-            table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-            th {{ text-align: left; color: #bb86fc; border-bottom: 2px solid #444; padding: 10px; }}
-            td {{ padding: 10px; border-bottom: 1px solid #333; vertical-align: top; }}
+            table.maps-table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+            table.maps-table th {{ text-align: left; color: #bb86fc; border-bottom: 2px solid #444; padding: 10px; }}
+            table.maps-table td {{ padding: 10px; border-bottom: 1px solid #333; vertical-align: top; }}
             
             .map-winner {{ color: #00e676; font-weight: bold; }}
             .sub-stats {{ font-size: 0.85em; color: #aaa; margin-top: 4px; }}
             .frags {{ color: #fff; font-weight: bold; }}
+            .file-name {{ display: block; font-size: 0.7em; color: #555; margin-top: 4px; font-family: 'Consolas', 'Monaco', monospace; }}
             
-            /* New Style for Filenames */
-            .file-name {{ 
-                display: block; 
-                font-size: 0.7em; 
-                color: #555; 
-                margin-top: 4px; 
-                font-family: 'Consolas', 'Monaco', monospace; 
-            }}
+            h2 {{ color: #bb86fc; font-size: 1.1em; margin-top: 30px; border-bottom: 1px solid #444; padding-bottom: 5px; }}
         </style>
+        <script>
+            function showTab(tabId) {{
+                document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                
+                document.getElementById(tabId).classList.add('active');
+                document.getElementById('btn-' + tabId).classList.add('active');
+            }}
+        </script>
     </head>
     <body>
         <div class="container">
             <h1>Match Overview: {output_filename.replace('.html', '')}</h1>
+            
+            <div class="tab-container">
+                <button id="btn-matches" class="tab-btn active" onclick="showTab('matches')">Match List</button>
+                <button id="btn-stats" class="tab-btn" onclick="showTab('stats')">Clan Summary</button>
+            </div>
+            
+            <div id="stats" class="section">
+                
+                <div class="summary-box">
+                    Dataset Totals: <strong>{total_series}</strong> Series Played | <strong>{total_maps}</strong> Maps Played
+                </div>
+            
+                <h2>Clan Performance</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Clan</th>
+                            <th>Series Played</th>
+                            <th>Series Won</th>
+                            <th>Maps Played</th>
+                            <th>Maps Won</th>
+                            <th>Maps Lost</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    """
+    
+    # Generate Stats Rows (Sorted by Series Won)
+    sorted_stats = sorted(clan_stats.items(), key=lambda x: x[1]['series_won'], reverse=True)
+    
+    for clan, s in sorted_stats:
+        win_rate = int((s['series_won'] / s['series_played']) * 100) if s['series_played'] > 0 else 0
+        html_content += f"""
+                        <tr>
+                            <td>{clan}</td>
+                            <td>{s['series_played']}</td>
+                            <td>{s['series_won']}</td>
+                            <td>{s['maps_played']}</td>
+                            <td>{s['maps_won']}</td>
+                            <td>{s['maps_lost']}</td>
+                            <td>{win_rate}%</td>
+                        </tr>
+        """
+
+    html_content += """
+                    </tbody>
+                </table>
+                
+                <h2>Map Distribution</h2>
+                <table class="data-table" style="width: 50%; margin: 0 auto;">
+                    <thead>
+                        <tr>
+                            <th>Map Name</th>
+                            <th>Times Played</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    """
+    
+    # Map Distribution Rows
+    for map_name, count in sorted(map_dist.items(), key=lambda x: x[1], reverse=True):
+        html_content += f"""
+                        <tr>
+                            <td>{map_name}</td>
+                            <td>{count}</td>
+                        </tr>
+        """
+        
+    html_content += """
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="matches" class="section active">
     """
 
     if not matches:
@@ -218,7 +368,7 @@ def generate_html(matches, output_filename):
                 </summary>
                 
                 <div class="match-details">
-                    <table>
+                    <table class="maps-table">
                         <thead>
                             <tr>
                                 <th style="width: 20%;">Map</th>
@@ -260,7 +410,7 @@ def generate_html(matches, output_filename):
         </div>
         """
 
-    html_content += "</div></body></html>"
+    html_content += "</div></div></body></html>"
     
     with open(output_filename, "w", encoding="utf-8") as f:
         f.write(html_content)
@@ -283,4 +433,6 @@ if __name__ == "__main__":
         
         raw_games = parse_games(target_dir)
         grouped_matches = group_into_matches(raw_games)
-        generate_html(grouped_matches, output_file)
+        clan_stats, map_dist, total_series, total_maps = calculate_stats(grouped_matches)
+        
+        generate_html(grouped_matches, clan_stats, map_dist, total_series, total_maps, output_file)

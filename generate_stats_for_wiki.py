@@ -16,7 +16,7 @@ QUAKE_COLORS = {
 }
 
 # Items to track opportunities for
-# RL and SG are treated as always available, so not listed here for conditional checks
+# RL and SG are treated as always available
 ALL_TRACKED_ITEMS = [
     # WEAPONS
     "lg", "gl", "sng", "ng", "ssg", 
@@ -44,7 +44,10 @@ def get_stats_structure():
         "team_color": None,
         
         # Core Stats
-        "frags": 0, "deaths": 0, "dmg_given": 0,
+        "frags": 0, 
+        "deaths": 0, 
+        "dmg_given": 0,
+        "dmg_enemy_weapons": 0, # NEW: Specifically for EWEP
         "dmg_to_die": 0,
         
         # Movement
@@ -102,10 +105,17 @@ def process_file(filepath, players_db, maps_config):
             
             db["frags"] += p_frags
             db["deaths"] += p_deaths
-            db["dmg_given"] += p.get("dmg", {}).get("given", 0)
+            
+            # Damage Stats
+            dmg_data = p.get("dmg", {})
+            db["dmg_given"] += dmg_data.get("given", 0)
+            
+            # NEW: Collect Enemy Weapons Damage (fallback to 0 if missing)
+            # Checks "enemy-weapons" (standard KTX) and "enemy_weapons" (some variants)
+            ewep = dmg_data.get("enemy-weapons", dmg_data.get("enemy_weapons", 0))
+            db["dmg_enemy_weapons"] += ewep
             
             # To-Die
-            dmg_data = p.get("dmg", {})
             db["dmg_to_die"] += dmg_data.get("taken-to-die", dmg_data.get("taken_to_die", 0))
 
             # Speed
@@ -189,7 +199,7 @@ def process_file(filepath, players_db, maps_config):
 def generate_wiki_table(players_db):
     headers = [
         "Player", "Games", 
-        "Avg Frags", "Avg Deaths", "EWEP", "To Die", "Eff %",
+        "Avg Frags", "Avg Deaths", "Avg Dmg", "EWEP", "To Die", "Eff %",
         "Avg Spd", "Max Spd",
         "RL Kills", "RL Xfer", "RL Hits", "RL Taken", "RL Drop",
         "LG Kills", "LG Taken", "LG Drop",
@@ -216,7 +226,13 @@ def generate_wiki_table(players_db):
         # 1. General Stats
         avg_frags = round(db["frags"] / g, 1)
         avg_deaths = round(db["deaths"] / g, 1)
+        
+        # Avg Damage (Renamed from EWEP)
         avg_dmg = int(db["dmg_given"] / g)
+        
+        # NEW: EWEP (Enemy Weapons Damage)
+        avg_ewep = int(db["dmg_enemy_weapons"] / g)
+        
         avg_to_die = int(db["dmg_to_die"] / g)
         
         eff_val = safe_div(db["acc_sums"]["eff"], db["acc_counts"]["eff"])
@@ -263,7 +279,7 @@ def generate_wiki_table(players_db):
         row = [
             f'| {color_style} | {name}',
             g, 
-            avg_frags, avg_deaths, avg_dmg, avg_to_die, eff_pct,
+            avg_frags, avg_deaths, avg_dmg, avg_ewep, avg_to_die, eff_pct,
             avg_speed, max_speed,
             rl_k, rl_xfer, rl_h, rl_t, rl_d,
             lg_k, lg_t, lg_d,

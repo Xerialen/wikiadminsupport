@@ -1,0 +1,27 @@
+{
+    "dm2": [
+        "rl", "gl", "ng", "ssg", 
+        "mh", "ra", "ya", 
+        "quad"
+    ],
+    "dm3": [
+        "lg", "rl", "gl", "sng", "ng", "ssg", 
+        "mh", "ra", "ya", 
+        "pent", "ring", "quad"
+    ],
+    "e1m2": [
+        "rl", "gl", "sng", "ng", "ssg", 
+        "ya", "ga", 
+        "quad"
+    ],
+    "phantombase": [
+        "lg", "rl", "gl", "sng", "ng", "ssg", 
+        "mh", "ra", "ya", "ga", 
+        "pent", "ring", "quad"
+    ],
+    "schloss": [
+        "rl", "gl", "sng", "ssg", 
+        "mh", "ra", "ya", 
+        "pent", "ring", "quad"
+    ]
+}
